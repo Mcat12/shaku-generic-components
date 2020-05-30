@@ -420,8 +420,7 @@ checksum = "f638d531eccd6e23b980caf34876660d38e265409d8e99b397ab71eb3612fad0"
 [[package]]
 name = "shaku"
 version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "95fe96e02be1fc6febbd04092382345d089bebed177635736fcdced1611f6d45"
+source = "git+https://github.com/Mcat12/shaku.git#d5f457fcb8c68ca5830a135828c69a7bd9e5cd53"
 dependencies = [
  "anymap",
  "shaku_derive",
@@ -440,8 +439,7 @@ dependencies = [
 [[package]]
 name = "shaku_derive"
 version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44846d3b7e53695b77557000c93175f93313b5006a9ee969f1cc549ee6d29c8a"
+source = "git+https://github.com/Mcat12/shaku.git#d5f457fcb8c68ca5830a135828c69a7bd9e5cd53"
 dependencies = [
  "proc-macro2",
  "quote",

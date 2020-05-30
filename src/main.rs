@@ -1,21 +1,16 @@
-#[macro_use]
-extern crate shaku_derive;
+use async_trait::async_trait;
+use shaku::{
+    module, Component, HasComponent, Interface, Module, ModuleBuildContext, ModuleBuilder,
+};
 
-#[macro_use]
-extern crate async_trait;
+pub trait Executor: Interface + Default {}
 
-#[macro_use]
-extern crate async_std;
-
-use shaku::{module, Component, Interface, HasComponent};
-
-pub trait Executor {}
-
+#[derive(Default)]
 pub struct SqlConnection;
 
 impl Executor for SqlConnection {}
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct DbPool;
 
 impl Executor for DbPool {}
@@ -25,16 +20,29 @@ pub trait MyService: Interface {
     async fn foo(&self) -> u16;
 }
 
-#[derive(Component)]
-#[shaku(interface = MyService)]
+// #[derive(Component)]
+// #[shaku(interface = MyService)]
 pub struct MyServiceImpl<E>
-    where E: Executor,
+where
+    E: Executor,
 {
+    #[allow(dead_code)]
     executor: E,
 }
 
+impl<E: Executor, M: Module> Component<M> for MyServiceImpl<E> {
+    type Interface = dyn MyService;
+    type Parameters = E;
+
+    fn build(_context: &mut ModuleBuildContext<M>, params: E) -> Box<dyn MyService> {
+        Box::new(Self { executor: params })
+    }
+}
+
+#[async_trait]
 impl<E> MyService for MyServiceImpl<E>
-    where E: Executor,
+where
+    E: Executor,
 {
     async fn foo(&self) -> u16 {
         1337
@@ -43,18 +51,17 @@ impl<E> MyService for MyServiceImpl<E>
 
 module! {
     MyModule {
-        components = [MyServiceImpl],
+        components = [MyServiceImpl<SqlConnection>],
         providers = []
     }
 }
 
-fn build_module<E>(executor: E)
-    where E: Executor,
+fn build_module<E>(executor: E) -> MyModule
+where
+    E: Executor,
 {
-    MyModule::builder()
-        .with_component_parameters::<MyServiceImpl<E>>(MyServiceImplParameters {
-            executor: pool.clone(),
-        })
+    ModuleBuilder::with_submodules(())
+        .with_component_override::<dyn MyService>(Box::new(MyServiceImpl { executor }))
         .build()
 }
 
