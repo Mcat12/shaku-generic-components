@@ -1,7 +1,5 @@
 use async_trait::async_trait;
-use shaku::{Component, HasComponent, Interface, Module, ModuleBuildContext, ModuleBuilder};
-use std::marker::PhantomData;
-use std::sync::Arc;
+use shaku::{module, Component, HasComponent, Interface, Module, ModuleBuildContext};
 
 pub trait Executor: Interface + Default {}
 
@@ -49,44 +47,10 @@ where
     }
 }
 
-// module! {
-//     MyModule {
-//         components = [MyServiceImpl],
-//         providers = []
-//     }
-// }
-
-struct MyModule<E: Executor> {
-    my_service: Arc<dyn MyService>,
-    _phantom: PhantomData<E>,
-}
-
-impl<E: Executor + Interface> Module for MyModule<E> {
-    type Submodules = ();
-
-    fn build(context: &mut ModuleBuildContext<Self>) -> Self {
-        Self {
-            my_service: Self::build_component(context),
-            _phantom: PhantomData,
-        }
-    }
-}
-
-impl<E: Executor + Interface> HasComponent<dyn MyService> for MyModule<E> {
-    fn build_component(context: &mut ModuleBuildContext<Self>) -> Arc<dyn MyService> {
-        context.build_component::<MyServiceImpl<E>>()
-    }
-
-    fn resolve(&self) -> Arc<dyn MyService> {
-        Arc::clone(&self.my_service)
-    }
-
-    fn resolve_ref(&self) -> &dyn MyService {
-        Arc::as_ref(&self.my_service)
-    }
-
-    fn resolve_mut(&mut self) -> Option<&mut dyn MyService> {
-        Arc::get_mut(&mut self.my_service)
+module! {
+    MyModule<E: Executor> {
+        components = [MyServiceImpl<E>],
+        providers = []
     }
 }
 
@@ -94,7 +58,7 @@ fn build_module<E>(executor: E) -> MyModule<E>
 where
     E: Executor,
 {
-    ModuleBuilder::with_submodules(())
+    MyModule::builder()
         .with_component_parameters::<MyServiceImpl<E>>(executor)
         .build()
 }
