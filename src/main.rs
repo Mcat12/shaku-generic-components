@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use shaku::{module, Component, HasComponent, Interface, Module, ModuleBuildContext};
+use shaku::{module, Component, HasComponent, Interface};
 
 pub trait Executor: Interface + Default {}
 
@@ -18,23 +18,14 @@ pub trait MyService: Interface {
     async fn foo(&self) -> u16;
 }
 
-// #[derive(Component)]
-// #[shaku(interface = MyService)]
+#[derive(Component)]
+#[shaku(interface = MyService)]
 pub struct MyServiceImpl<E>
 where
     E: Executor,
 {
     #[allow(dead_code)]
     executor: E,
-}
-
-impl<E: Executor, M: Module> Component<M> for MyServiceImpl<E> {
-    type Interface = dyn MyService;
-    type Parameters = E;
-
-    fn build(_context: &mut ModuleBuildContext<M>, params: E) -> Box<dyn MyService> {
-        Box::new(Self { executor: params })
-    }
 }
 
 #[async_trait]
@@ -59,7 +50,7 @@ where
     E: Executor,
 {
     MyModule::builder()
-        .with_component_parameters::<MyServiceImpl<E>>(executor)
+        .with_component_parameters::<MyServiceImpl<E>>(MyServiceImplParameters { executor })
         .build()
 }
 
